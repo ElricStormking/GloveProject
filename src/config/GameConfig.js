@@ -27,8 +27,10 @@ window.GameConfig = {
         REALITY_GEM: { id: 'reality_gem', name: 'Reality Gem', type: 'low', payout: 3 },
         POWER_GEM: { id: 'power_gem', name: 'Power Gem', type: 'low', payout: 4 },
         TIME_GEM: { id: 'time_gem', name: 'Time Gem', type: 'low', payout: 5 },
+        SOUL_GEM: { id: 'soul_gem', name: 'Soul Gem', type: 'low', payout: 6 },
         THANOS: { id: 'thanos', name: 'Thanos', type: 'high', payout: 10 },
         SCARLET_WITCH: { id: 'scarlet_witch', name: 'Scarlet Witch', type: 'high', payout: 25 },
+        SCARLET_MAGIC_SPELL: { id: 'scarlet_magic_spell', name: 'Scarlet Magic Spell', type: 'high', payout: 15 },
         INFINITY_GLOVE: { id: 'infinity_glove', name: 'Infinity Glove', type: 'scatter', payout: 0 }
     },
     

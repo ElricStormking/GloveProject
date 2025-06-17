@@ -418,7 +418,7 @@ window.GameScene = class GameScene extends Phaser.Scene {
         this.gridManager.applyMultiplierToSymbol(col, row, multiplier);
         
         // Show effect
-        this.showMessage(`INFINITY POWER! Symbol x${multiplier}!`);
+        this.showMessage(`INFINITY POWER! All 6 Gems + Thanos! Symbol x${multiplier}!`);
         window.SafeSound.play(this, 'bonus');
     }
     

@@ -49,14 +49,14 @@ A 6x5 cascading slot game featuring the epic battle between Thanos and Scarlet W
 ### Symbols
 | Symbol Type | Description | Payout (8+ Matches) |
 |-------------|-------------|---------------------|
-| **Low-Paying** | Space Gem, Mind Gem, Reality Gem, Power Gem, Time Gem | 2x to 5x bet |
-| **High-Paying** | Thanos, Scarlet Witch | 5x to 25x bet |
+| **Low-Paying** | Space Gem, Mind Gem, Reality Gem, Power Gem, Time Gem, Soul Gem | 2x to 6x bet |
+| **High-Paying** | Thanos, Scarlet Witch, Scarlet Magic Spell | 10x to 25x bet |
 | **Scatter** | Infinity Glove (triggers bonus features) | N/A |
 
 ### Bonus Features
 
 #### Infinity Power (Base Game)
-- **Trigger:** When all 5 Infinity Gem symbols appear on the grid
+- **Trigger:** When all 6 Infinity Gem symbols + Thanos appear on the grid
 - **Effect:** Transforms one random symbol into a multiplier symbol (2x to 500x)
 - **Visual:** Golden glow effect with multiplier text display
 

@@ -111,13 +111,15 @@ window.GridManager = class GridManager {
         
         // Regular symbols with weighted probability
         const weights = {
-            'space_gem': 20,
-            'mind_gem': 20,
-            'reality_gem': 18,
-            'power_gem': 15,
+            'space_gem': 18,
+            'mind_gem': 18,
+            'reality_gem': 16,
+            'power_gem': 14,
             'time_gem': 12,
+            'soul_gem': 10,
             'thanos': 8,
-            'scarlet_witch': 7
+            'scarlet_witch': 6,
+            'scarlet_magic_spell': 5
         };
         
         const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
@@ -289,19 +291,19 @@ window.GridManager = class GridManager {
     }
     
     checkForInfinityPower() {
-        const gemTypes = ['space_gem', 'mind_gem', 'reality_gem', 'power_gem', 'time_gem'];
-        const foundGems = new Set();
+        const requiredSymbols = ['space_gem', 'mind_gem', 'reality_gem', 'power_gem', 'time_gem', 'soul_gem', 'thanos'];
+        const foundSymbols = new Set();
         
         for (let col = 0; col < this.cols; col++) {
             for (let row = 0; row < this.rows; row++) {
                 const symbol = this.grid[col][row];
-                if (symbol && gemTypes.includes(symbol.symbolType)) {
-                    foundGems.add(symbol.symbolType);
+                if (symbol && requiredSymbols.includes(symbol.symbolType)) {
+                    foundSymbols.add(symbol.symbolType);
                 }
             }
         }
         
-        return foundGems.size === gemTypes.length;
+        return foundSymbols.size === requiredSymbols.length;
     }
     
     countScatters() {

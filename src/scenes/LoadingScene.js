@@ -92,8 +92,10 @@ window.LoadingScene = class LoadingScene extends Phaser.Scene {
             reality_gem: 0xFF0000,    // Red
             power_gem: 0x9B59B6,      // Purple
             time_gem: 0x00FF00,       // Green
+            soul_gem: 0xFF8C00,       // Orange
             thanos: 0x4B0082,         // Indigo
             scarlet_witch: 0xDC143C,  // Crimson
+            scarlet_magic_spell: 0xFF1493, // Deep Pink
             infinity_glove: 0xFFD700  // Gold
         };
         
