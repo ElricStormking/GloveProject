@@ -200,4 +200,4 @@ Based on the comprehensive [Game Design Document](../InfinityStormGameDesign.mar
 
 ---
 
-**Enjoy the epic battle between Thanos and Scarlet Witch in Infinity Storm!** ⚡💎🎰 
+**Enjoy the epic battle between Thanos and Scarlet Witch in Infinity Storm!** ⚡💎🎰
