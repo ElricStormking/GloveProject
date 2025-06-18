@@ -118,8 +118,22 @@ window.LoadingScene = class LoadingScene extends Phaser.Scene {
         this.loadImageWithFallback('soul_gem', 'assets/images/soul_gem.png', 0xFF8C00);
         this.loadImageWithFallback('infinity_glove', 'assets/images/infinity_glove.png', 0xFFD700);
         
-        // Skip audio loading for now - we'll handle this in the sound system
-        console.log('Skipping audio loading - using silent fallbacks');
+        // Load character portrait images with fallbacks
+        this.loadImageWithFallback('portrait_thanos', 'assets/images/portrait_thanos.png', 0x4B0082);
+        this.loadImageWithFallback('portrait_scarlet_witch', 'assets/images/portrait_scarlet_witch.png', 0xDC143C);
+        
+        // Load character symbol images with fallbacks (for game symbols)
+        this.loadImageWithFallback('thanos', 'assets/images/thanos.png', 0x4B0082);
+        this.loadImageWithFallback('scarlet_witch', 'assets/images/scarlet_witch.png', 0xDC143C);
+        
+        // Load custom background
+        this.loadImageWithFallback('bg_infinity_storm', 'assets/images/BG_infinity_storm.png', 0x1a1a2e);
+        
+        // Load custom background music
+        this.load.audio('bgm_infinity_storm', 'assets/audio/BGM_infinity_storm.mp3');
+        
+        // Audio loading enabled for custom background music
+        console.log('Loading custom background music: BGM_infinity_storm.mp3');
     }
     
     createEssentialTextures() {
@@ -127,8 +141,6 @@ window.LoadingScene = class LoadingScene extends Phaser.Scene {
         
         // Create all required textures immediately
         const textures = {
-            'thanos': { color: 0x4B0082, text: 'THANOS' },
-            'scarlet_witch': { color: 0xDC143C, text: 'SCARLET WITCH' },
             'scarlet_magic_spell': { color: 0xFF1493, text: 'SCARLET MAGIC SPELL' },
             'button': null,
             'background': null,
@@ -303,6 +315,7 @@ window.LoadingScene = class LoadingScene extends Phaser.Scene {
         const requiredTextures = [
             'space_gem', 'mind_gem', 'reality_gem', 'power_gem', 'time_gem', 'soul_gem',
             'infinity_glove', 'thanos', 'scarlet_witch', 'scarlet_magic_spell',
+            'portrait_thanos', 'portrait_scarlet_witch', 'bg_infinity_storm',
             'button', 'background', 'particle'
         ];
         

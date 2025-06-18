@@ -10,9 +10,16 @@ window.GameScene = class GameScene extends Phaser.Scene {
         this.stateManager = this.game.stateManager;
         this.stateManager.setState(this.stateManager.states.PLAYING);
         
-        // Create background
-        const bg = this.add.tileSprite(0, 0, this.cameras.main.width, this.cameras.main.height, 'background');
-        bg.setOrigin(0, 0);
+        // Create custom cosmic background
+        const bg = this.add.image(this.cameras.main.width / 2, this.cameras.main.height / 2, 'bg_infinity_storm');
+        bg.setOrigin(0.5, 0.5);
+        
+        // Scale the background to cover the entire screen while maintaining aspect ratio
+        const scaleX = this.cameras.main.width / bg.width;
+        const scaleY = this.cameras.main.height / bg.height;
+        const scale = Math.max(scaleX, scaleY); // Use the larger scale to ensure full coverage
+        bg.setScale(scale);
+        bg.setDepth(-10); // Ensure it's behind everything
         
         // Initialize grid manager
         this.gridManager = new window.GridManager(this);
@@ -48,8 +55,8 @@ window.GameScene = class GameScene extends Phaser.Scene {
         this.freeSpinsAutoPlay = true; // Auto-play free spins by default
         
         // Start background music if enabled
-        if (this.stateManager.gameData.musicEnabled && !this.sound.get('bgm')) {
-            this.bgMusic = window.SafeSound.add(this, 'bgm', { loop: true, volume: 0.3 });
+        if (this.stateManager.gameData.musicEnabled && !this.sound.get('bgm_infinity_storm')) {
+            this.bgMusic = window.SafeSound.add(this, 'bgm_infinity_storm', { loop: true, volume: 0.3 });
             if (this.bgMusic) this.bgMusic.play();
         }
     }
@@ -62,14 +69,14 @@ window.GameScene = class GameScene extends Phaser.Scene {
         const scarletWitch = this.add.image(
             gridX - portraitSpacing, 
             gridY + (gridHeight / 2), 
-            'scarlet_witch'
+            'portrait_scarlet_witch'
         );
         scarletWitch.setOrigin(1, 0.5); // Right-aligned to grid
         scarletWitch.setScale(portraitScale);
         scarletWitch.setDepth(1); // Behind UI elements but above background
         
         // Add subtle glow effect to Scarlet Witch
-        const witchGlow = this.add.image(scarletWitch.x, scarletWitch.y, 'scarlet_witch');
+        const witchGlow = this.add.image(scarletWitch.x, scarletWitch.y, 'portrait_scarlet_witch');
         witchGlow.setOrigin(1, 0.5);
         witchGlow.setScale(portraitScale * 1.1);
         witchGlow.setTint(0xFF1493); // Deep pink glow
@@ -80,14 +87,14 @@ window.GameScene = class GameScene extends Phaser.Scene {
         const thanos = this.add.image(
             gridX + gridWidth + portraitSpacing, 
             gridY + (gridHeight / 2), 
-            'thanos'
+            'portrait_thanos'
         );
         thanos.setOrigin(0, 0.5); // Left-aligned to grid
         thanos.setScale(portraitScale);
         thanos.setDepth(1);
         
         // Add subtle glow effect to Thanos
-        const thanosGlow = this.add.image(thanos.x, thanos.y, 'thanos');
+        const thanosGlow = this.add.image(thanos.x, thanos.y, 'portrait_thanos');
         thanosGlow.setOrigin(0, 0.5);
         thanosGlow.setScale(portraitScale * 1.1);
         thanosGlow.setTint(0x4B0082); // Indigo glow

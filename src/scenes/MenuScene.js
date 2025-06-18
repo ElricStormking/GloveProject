@@ -79,7 +79,7 @@ window.MenuScene = class MenuScene extends Phaser.Scene {
                 window.SafeSound.play(this, 'click');
                 
                 if (stateManager.gameData.musicEnabled && !this.bgMusic) {
-                    this.bgMusic = window.SafeSound.add(this, 'bgm', { loop: true, volume: 0.5 });
+                    this.bgMusic = window.SafeSound.add(this, 'bgm_infinity_storm', { loop: true, volume: 0.5 });
                     if (this.bgMusic) this.bgMusic.play();
                 } else if (!stateManager.gameData.musicEnabled && this.bgMusic) {
                     this.bgMusic.stop();
