@@ -90,61 +90,111 @@ window.LoadingScene = class LoadingScene extends Phaser.Scene {
         this.loadGameAssets();
         
         // Add a timeout to force loading to complete if it hangs
-        this.time.delayedCall(10000, () => {
+        this.time.delayedCall(5000, () => {
             if (!this.load.isLoading()) return; // Already finished
             console.warn('Loading timeout - forcing completion');
             assetText.setText('Loading timeout - continuing...');
             this.load.removeAllListeners();
-            this.time.delayedCall(1000, () => {
+            
+            // Ensure all essential textures exist before continuing
+            this.ensureAllTexturesExist();
+            
+            this.time.delayedCall(500, () => {
                 this.scene.start('MenuScene');
             });
         });
     }
     
     loadGameAssets() {
-        // Load actual gem images
-        this.load.image('space_gem', 'assets/images/space_gem.png');
-        this.load.image('mind_gem', 'assets/images/mind_gem.png');
-        this.load.image('reality_gem', 'assets/images/reality_gem.png');
-        this.load.image('power_gem', 'assets/images/power_gem.png');
-        this.load.image('time_gem', 'assets/images/time_gem.png');
-        this.load.image('soul_gem', 'assets/images/soul_gem.png');
+        // First, create all essential textures immediately to ensure they exist
+        this.createEssentialTextures();
         
-        // Load actual Infinity Glove image
-        this.load.image('infinity_glove', 'assets/images/infinity_glove.png');
-        
-        // Create colored rectangles for remaining symbols
-        const placeholderColors = {
-            thanos: 0x4B0082,         // Indigo
-            scarlet_witch: 0xDC143C,  // Crimson
-            scarlet_magic_spell: 0xFF1493 // Deep Pink
-        };
-        
-        // Generate placeholder textures for non-gem symbols
-        Object.keys(placeholderColors).forEach(key => {
-            console.log(`Generating placeholder texture for: ${key}`);
-            try {
-                const texture = this.generateColoredTexture(placeholderColors[key], key);
-                this.load.image(key, texture);
-                console.log(`Successfully generated texture for: ${key}`);
-            } catch (error) {
-                console.error(`Failed to generate texture for ${key}:`, error);
-                // Create a simple fallback
-                this.load.image(key, 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==');
-            }
-        });
+        // Then try to load actual gem images with fallbacks
+        this.loadImageWithFallback('space_gem', 'assets/images/space_gem.png', 0x0099FF);
+        this.loadImageWithFallback('mind_gem', 'assets/images/mind_gem.png', 0x00FFFF);
+        this.loadImageWithFallback('reality_gem', 'assets/images/reality_gem.png', 0xFF0000);
+        this.loadImageWithFallback('power_gem', 'assets/images/power_gem.png', 0x9932CC);
+        this.loadImageWithFallback('time_gem', 'assets/images/time_gem.png', 0x00FF00);
+        this.loadImageWithFallback('soul_gem', 'assets/images/soul_gem.png', 0xFF8C00);
+        this.loadImageWithFallback('infinity_glove', 'assets/images/infinity_glove.png', 0xFFD700);
         
         // Skip audio loading for now - we'll handle this in the sound system
         console.log('Skipping audio loading - using silent fallbacks');
+    }
+    
+    createEssentialTextures() {
+        console.log('Creating essential textures...');
         
-        // Create button texture
-        this.load.image('button', this.generateButtonTexture());
+        // Create all required textures immediately
+        const textures = {
+            'thanos': { color: 0x4B0082, text: 'THANOS' },
+            'scarlet_witch': { color: 0xDC143C, text: 'SCARLET WITCH' },
+            'scarlet_magic_spell': { color: 0xFF1493, text: 'SCARLET MAGIC SPELL' },
+            'button': null,
+            'background': null,
+            'particle': null
+        };
         
-        // Create background texture
-        this.load.image('background', this.generateBackgroundTexture());
+        // Generate symbol textures
+        Object.keys(textures).forEach(key => {
+            try {
+                let textureData;
+                if (textures[key] === null) {
+                    // Special textures
+                    switch(key) {
+                        case 'button':
+                            textureData = this.generateButtonTexture();
+                            break;
+                        case 'background':
+                            textureData = this.generateBackgroundTexture();
+                            break;
+                        case 'particle':
+                            textureData = this.generateParticleTexture();
+                            break;
+                    }
+                } else {
+                    // Symbol textures
+                    textureData = this.generateColoredTexture(textures[key].color, textures[key].text);
+                }
+                
+                // Add texture to loader
+                this.textures.addBase64(key, textureData);
+                console.log(`Created essential texture: ${key}`);
+            } catch (error) {
+                console.error(`Failed to create texture ${key}:`, error);
+                // Create minimal fallback
+                this.textures.addBase64(key, this.generateMinimalTexture());
+            }
+        });
+    }
+    
+    loadImageWithFallback(key, path, fallbackColor) {
+        // Try to load the image
+        this.load.image(key, path);
         
-        // Create particle texture
-        this.load.image('particle', this.generateParticleTexture());
+        // Set up error handler for this specific image
+        this.load.once(`fileerror-image-${key}`, () => {
+            console.warn(`Failed to load ${key}, using fallback`);
+            // Create fallback texture
+            const fallbackTexture = this.generateColoredTexture(fallbackColor, key.replace(/_/g, ' ').toUpperCase());
+            this.textures.addBase64(key, fallbackTexture);
+        });
+    }
+    
+    generateMinimalTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 100;
+        canvas.height = 100;
+        const ctx = canvas.getContext('2d');
+        
+        // Simple gray square
+        ctx.fillStyle = '#666666';
+        ctx.fillRect(0, 0, 100, 100);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(1, 1, 98, 98);
+        
+        return canvas.toDataURL();
     }
     
     generateColoredTexture(color, text) {
@@ -164,18 +214,27 @@ window.LoadingScene = class LoadingScene extends Phaser.Scene {
         
         // Add text
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 14px Arial';
+        ctx.font = 'bold 12px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
         const displayText = text.replace(/_/g, ' ').toUpperCase();
         const words = displayText.split(' ');
         
-        if (words.length > 1) {
+        // Handle different numbers of words
+        if (words.length === 1) {
+            ctx.fillText(words[0], 50, 50);
+        } else if (words.length === 2) {
             ctx.fillText(words[0], 50, 40);
             ctx.fillText(words[1], 50, 60);
+        } else if (words.length === 3) {
+            ctx.fillText(words[0], 50, 30);
+            ctx.fillText(words[1], 50, 50);
+            ctx.fillText(words[2], 50, 70);
         } else {
-            ctx.fillText(displayText, 50, 50);
+            // Too many words, just show first two
+            ctx.fillText(words[0], 50, 40);
+            ctx.fillText(words.slice(1).join(' '), 50, 60);
         }
         
         return canvas.toDataURL();
@@ -239,7 +298,21 @@ window.LoadingScene = class LoadingScene extends Phaser.Scene {
         return canvas.toDataURL();
     }
     
-
+    ensureAllTexturesExist() {
+        console.log('Ensuring all textures exist...');
+        const requiredTextures = [
+            'space_gem', 'mind_gem', 'reality_gem', 'power_gem', 'time_gem', 'soul_gem',
+            'infinity_glove', 'thanos', 'scarlet_witch', 'scarlet_magic_spell',
+            'button', 'background', 'particle'
+        ];
+        
+        requiredTextures.forEach(key => {
+            if (!this.textures.exists(key)) {
+                console.warn(`Texture ${key} missing, creating fallback`);
+                this.textures.addBase64(key, this.generateMinimalTexture());
+            }
+        });
+    }
     
     create() {
         console.log('LoadingScene create() called - transitioning to MenuScene');
