@@ -31,6 +31,9 @@ window.GameScene = class GameScene extends Phaser.Scene {
         
         this.gridManager.setPosition(gridX, gridY);
         
+        // Add character portraits to frame the grid
+        this.createCharacterPortraits(gridX, gridY, gridWidth, gridHeight);
+        
         // Create UI
         this.createUI();
         
@@ -49,6 +52,76 @@ window.GameScene = class GameScene extends Phaser.Scene {
             this.bgMusic = window.SafeSound.add(this, 'bgm', { loop: true, volume: 0.3 });
             if (this.bgMusic) this.bgMusic.play();
         }
+    }
+    
+    createCharacterPortraits(gridX, gridY, gridWidth, gridHeight) {
+        const portraitScale = 0.8; // Scale down the portraits to fit nicely
+        const portraitSpacing = 40; // Distance from grid edge
+        
+        // Scarlet Witch on the left side
+        const scarletWitch = this.add.image(
+            gridX - portraitSpacing, 
+            gridY + (gridHeight / 2), 
+            'scarlet_witch'
+        );
+        scarletWitch.setOrigin(1, 0.5); // Right-aligned to grid
+        scarletWitch.setScale(portraitScale);
+        scarletWitch.setDepth(1); // Behind UI elements but above background
+        
+        // Add subtle glow effect to Scarlet Witch
+        const witchGlow = this.add.image(scarletWitch.x, scarletWitch.y, 'scarlet_witch');
+        witchGlow.setOrigin(1, 0.5);
+        witchGlow.setScale(portraitScale * 1.1);
+        witchGlow.setTint(0xFF1493); // Deep pink glow
+        witchGlow.setAlpha(0.3);
+        witchGlow.setDepth(0);
+        
+        // Thanos on the right side
+        const thanos = this.add.image(
+            gridX + gridWidth + portraitSpacing, 
+            gridY + (gridHeight / 2), 
+            'thanos'
+        );
+        thanos.setOrigin(0, 0.5); // Left-aligned to grid
+        thanos.setScale(portraitScale);
+        thanos.setDepth(1);
+        
+        // Add subtle glow effect to Thanos
+        const thanosGlow = this.add.image(thanos.x, thanos.y, 'thanos');
+        thanosGlow.setOrigin(0, 0.5);
+        thanosGlow.setScale(portraitScale * 1.1);
+        thanosGlow.setTint(0x4B0082); // Indigo glow
+        thanosGlow.setAlpha(0.3);
+        thanosGlow.setDepth(0);
+        
+        // Add breathing animation to both characters
+        this.tweens.add({
+            targets: [scarletWitch, witchGlow],
+            scaleX: portraitScale * 1.05,
+            scaleY: portraitScale * 1.05,
+            duration: 2000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+        
+        this.tweens.add({
+            targets: [thanos, thanosGlow],
+            scaleX: portraitScale * 1.05,
+            scaleY: portraitScale * 1.05,
+            duration: 2200, // Slightly different timing for variety
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+        
+        // Store references for potential future use
+        this.characterPortraits = {
+            scarletWitch: scarletWitch,
+            scarletWitchGlow: witchGlow,
+            thanos: thanos,
+            thanosGlow: thanosGlow
+        };
     }
     
     createUI() {
