@@ -39,9 +39,9 @@ window.GameConfig = {
     
     // Free Spins Configuration
     FREE_SPINS: {
-        SCATTER_3: 10,
-        SCATTER_4: 15,
-        SCATTER_5: 20,
+        SCATTER_4: 10,  // 4 scatters = 10 free spins
+        SCATTER_5: 15,  // 5 scatters = 15 free spins
+        SCATTER_6_PLUS: 20, // 6+ scatters = 20 free spins
         RETRIGGER_SPINS: 2,
         BUY_FEATURE_MIN: 40,
         BUY_FEATURE_MAX: 100

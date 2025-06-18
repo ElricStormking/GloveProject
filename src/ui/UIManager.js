@@ -160,16 +160,52 @@ window.UIManager = class UIManager {
     }
     
     updateFreeSpins(count, multiplier) {
+        console.log(`=== UI UPDATE FREE SPINS ===`);
+        console.log(`Count: ${count}, Multiplier: ${multiplier}`);
+        console.log(`freeSpinsText exists: ${!!this.scene.freeSpinsText}`);
+        
         if (this.scene.freeSpinsText) {
             if (count > 0) {
+                console.log(`Setting free spins text to visible with: Free Spins: ${count} | Multiplier: x${multiplier}`);
+                const autoText = this.scene.freeSpinsAutoPlay ? ' [AUTO]' : ' [MANUAL]';
                 this.scene.freeSpinsText.setText(
-                    `Free Spins: ${count} | Multiplier: x${multiplier}`
+                    `Free Spins: ${count} | Multiplier: x${multiplier}${autoText}`
                 );
                 this.scene.freeSpinsText.setVisible(true);
+                
+                // Add pulsing animation to make it more noticeable
+                this.scene.tweens.add({
+                    targets: this.scene.freeSpinsText,
+                    scaleX: 1.2,
+                    scaleY: 1.2,
+                    duration: 400,
+                    yoyo: true,
+                    repeat: 1,
+                    ease: 'Power2'
+                });
+                
+                // Add continuous glow effect
+                this.scene.tweens.add({
+                    targets: this.scene.freeSpinsText,
+                    alpha: 0.7,
+                    duration: 1000,
+                    yoyo: true,
+                    repeat: -1,
+                    ease: 'Sine.easeInOut'
+                });
             } else {
+                console.log(`Setting free spins text to hidden`);
                 this.scene.freeSpinsText.setVisible(false);
+                // Stop any running animations
+                this.scene.tweens.killTweensOf(this.scene.freeSpinsText);
+                this.scene.freeSpinsText.setAlpha(1);
+                this.scene.freeSpinsText.setScale(1);
             }
+        } else {
+            console.log(`ERROR: freeSpinsText not found!`);
         }
+        
+        console.log(`=== END UI UPDATE FREE SPINS ===`);
     }
     
     setButtonsEnabled(enabled) {

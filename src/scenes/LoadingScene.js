@@ -80,28 +80,32 @@ window.LoadingScene = class LoadingScene extends Phaser.Scene {
             assetText.destroy();
         });
         
-        // Load placeholder assets using Phaser's built-in shapes and colors
-        this.createPlaceholderAssets();
+        // Load game assets - actual gem images and placeholder textures
+        this.loadGameAssets();
     }
     
-    createPlaceholderAssets() {
-        // Create colored rectangles as placeholder symbols
-        const colors = {
-            space_gem: 0x0066FF,      // Blue
-            mind_gem: 0xFFD700,       // Yellow
-            reality_gem: 0xFF0000,    // Red
-            power_gem: 0x9B59B6,      // Purple
-            time_gem: 0x00FF00,       // Green
-            soul_gem: 0xFF8C00,       // Orange
+    loadGameAssets() {
+        // Load actual gem images
+        this.load.image('space_gem', 'assets/images/space_gem.png');
+        this.load.image('mind_gem', 'assets/images/mind_gem.png');
+        this.load.image('reality_gem', 'assets/images/reality_gem.png');
+        this.load.image('power_gem', 'assets/images/power_gem.png');
+        this.load.image('time_gem', 'assets/images/time_gem.png');
+        this.load.image('soul_gem', 'assets/images/soul_gem.png');
+        
+        // Load actual Infinity Glove image
+        this.load.image('infinity_glove', 'assets/images/infinity_glove.png');
+        
+        // Create colored rectangles for remaining symbols
+        const placeholderColors = {
             thanos: 0x4B0082,         // Indigo
             scarlet_witch: 0xDC143C,  // Crimson
-            scarlet_magic_spell: 0xFF1493, // Deep Pink
-            infinity_glove: 0xFFD700  // Gold
+            scarlet_magic_spell: 0xFF1493 // Deep Pink
         };
         
-        // Generate placeholder textures
-        Object.keys(colors).forEach(key => {
-            this.load.image(key, this.generateColoredTexture(colors[key], key));
+        // Generate placeholder textures for non-gem symbols
+        Object.keys(placeholderColors).forEach(key => {
+            this.load.image(key, this.generateColoredTexture(placeholderColors[key], key));
         });
         
         // Skip audio loading for now - we'll handle this in the sound system

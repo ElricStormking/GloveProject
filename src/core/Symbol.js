@@ -63,15 +63,35 @@ window.Symbol = class Symbol extends Phaser.GameObjects.Sprite {
     }
     
     setupAnimations() {
-        // Idle animation - gentle floating
-        this.idleTween = this.scene.tweens.add({
-            targets: this,
-            y: this.y + 5,
-            duration: 2000 + Math.random() * 1000,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
-        });
+        // Don't start idle animations immediately - they'll be started after cascading
+        this.idleTween = null;
+    }
+    
+    startIdleAnimation() {
+        // Stop any existing idle animation
+        if (this.idleTween) {
+            this.idleTween.stop();
+        }
+        
+        // Only start idle animation if symbol is in IDLE state
+        if (this.currentState === this.states.IDLE) {
+            // Idle animation - gentle floating
+            this.idleTween = this.scene.tweens.add({
+                targets: this,
+                y: this.y + 5,
+                duration: 2000 + Math.random() * 1000,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+        }
+    }
+    
+    stopIdleAnimation() {
+        if (this.idleTween) {
+            this.idleTween.stop();
+            this.idleTween = null;
+        }
     }
     
     appear(delay = 0) {
@@ -114,6 +134,9 @@ window.Symbol = class Symbol extends Phaser.GameObjects.Sprite {
     fall(targetY, duration = window.GameConfig.CASCADE_SPEED) {
         this.currentState = this.states.FALLING;
         
+        // Stop idle animation during fall
+        this.stopIdleAnimation();
+        
         return new Promise(resolve => {
             this.scene.tweens.add({
                 targets: this,
@@ -122,6 +145,7 @@ window.Symbol = class Symbol extends Phaser.GameObjects.Sprite {
                 ease: 'Bounce.out',
                 onComplete: () => {
                     this.currentState = this.states.IDLE;
+                    // Don't start idle animation immediately - let cascading finish first
                     resolve();
                 }
             });
@@ -173,6 +197,12 @@ window.Symbol = class Symbol extends Phaser.GameObjects.Sprite {
         // Stop all tweens
         if (this.idleTween) {
             this.idleTween.stop();
+        }
+        
+        // Clean up multiplier text if it exists
+        if (this.multiplierText) {
+            this.multiplierText.destroy();
+            this.multiplierText = null;
         }
         
         // Destruction animation
@@ -352,6 +382,12 @@ window.Symbol = class Symbol extends Phaser.GameObjects.Sprite {
         if (this.glowEffect) {
             this.glowEffect.x = x;
             this.glowEffect.y = y;
+        }
+        
+        // Update multiplier text position if it exists
+        if (this.multiplierText) {
+            this.multiplierText.x = x;
+            this.multiplierText.y = y - 30;
         }
     }
     

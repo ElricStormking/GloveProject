@@ -105,7 +105,7 @@ window.GridManager = class GridManager {
     
     getRandomSymbolType() {
         // Add scatter chance
-        if (Math.random() < 0.05) { // 5% chance for scatter
+        if (Math.random() < 0.04) { // 5% chance for scatter
             return 'infinity_glove';
         }
         
@@ -137,50 +137,32 @@ window.GridManager = class GridManager {
     
     findMatches() {
         const matches = [];
-        const visited = Array(this.cols).fill(null).map(() => Array(this.rows).fill(false));
+        const symbolCounts = {};
         
-        // Check each cell
+        // Count all symbols on the grid
         for (let col = 0; col < this.cols; col++) {
             for (let row = 0; row < this.rows; row++) {
-                if (!visited[col][row] && this.grid[col][row]) {
-                    const match = this.floodFill(col, row, visited);
-                    if (match.length >= window.GameConfig.MIN_MATCH_COUNT) {
-                        matches.push(match);
+                const symbol = this.grid[col][row];
+                if (symbol && symbol.symbolType !== 'infinity_glove') { // Exclude scatter symbols
+                    if (!symbolCounts[symbol.symbolType]) {
+                        symbolCounts[symbol.symbolType] = [];
                     }
+                    symbolCounts[symbol.symbolType].push({ col, row, symbol });
                 }
+            }
+        }
+        
+        // Check which symbol types have 8+ instances
+        for (const [symbolType, positions] of Object.entries(symbolCounts)) {
+            if (positions.length >= window.GameConfig.MIN_MATCH_COUNT) {
+                matches.push(positions);
             }
         }
         
         return matches;
     }
     
-    floodFill(startCol, startRow, visited) {
-        const symbol = this.grid[startCol][startRow];
-        if (!symbol) return [];
-        
-        const symbolType = symbol.symbolType;
-        const match = [];
-        const stack = [[startCol, startRow]];
-        
-        while (stack.length > 0) {
-            const [col, row] = stack.pop();
-            
-            if (col < 0 || col >= this.cols || row < 0 || row >= this.rows) continue;
-            if (visited[col][row]) continue;
-            if (!this.grid[col][row] || this.grid[col][row].symbolType !== symbolType) continue;
-            
-            visited[col][row] = true;
-            match.push({ col, row, symbol: this.grid[col][row] });
-            
-            // Check all 4 directions
-            stack.push([col + 1, row]);
-            stack.push([col - 1, row]);
-            stack.push([col, row + 1]);
-            stack.push([col, row - 1]);
-        }
-        
-        return match;
-    }
+
     
     removeMatches(matches) {
         const removedSymbols = [];
@@ -190,6 +172,9 @@ window.GridManager = class GridManager {
                 if (symbol) {
                     removedSymbols.push(symbol);
                     this.grid[col][row] = null;
+                    
+                    // Stop any existing tweens on this symbol first
+                    this.scene.tweens.killTweensOf(symbol);
                     
                     // Use Symbol's destroy method which handles animation
                     // Don't add to pool as Symbol.destroy() will fully destroy it
@@ -201,32 +186,74 @@ window.GridManager = class GridManager {
         return removedSymbols;
     }
     
+    stopAllSymbolAnimations() {
+        // Stop all tweens and idle animations for all symbols on the grid
+        for (let col = 0; col < this.cols; col++) {
+            for (let row = 0; row < this.rows; row++) {
+                const symbol = this.grid[col][row];
+                if (symbol) {
+                    this.scene.tweens.killTweensOf(symbol);
+                    if (symbol.stopIdleAnimation) {
+                        symbol.stopIdleAnimation();
+                    }
+                }
+            }
+        }
+    }
+    
     async cascadeSymbols() {
         this.isCascading = true;
+        
+        // Stop all existing animations first to prevent conflicts
+        this.stopAllIdleAnimations();
+        this.scene.tweens.killTweensOf(this.scene.children.list.filter(child => child.symbolType));
+        
         const promises = [];
         
         // For each column, drop symbols down
         for (let col = 0; col < this.cols; col++) {
-            let emptyRow = -1;
+            let writeRow = this.rows - 1; // Start from bottom
             
-            // Find empty spaces from bottom to top
+            // Collect all existing symbols in this column (from bottom to top)
+            const existingSymbols = [];
             for (let row = this.rows - 1; row >= 0; row--) {
-                if (!this.grid[col][row] && emptyRow === -1) {
-                    emptyRow = row;
-                } else if (this.grid[col][row] && emptyRow !== -1) {
-                    // Move symbol down
-                    const symbol = this.grid[col][row];
-                    this.grid[col][emptyRow] = symbol;
-                    this.grid[col][row] = null;
+                if (this.grid[col][row]) {
+                    existingSymbols.push({
+                        symbol: this.grid[col][row],
+                        originalRow: row
+                    });
+                    this.grid[col][row] = null; // Clear the grid position
+                }
+            }
+            
+            // Place symbols back from bottom up
+            for (let i = 0; i < existingSymbols.length; i++) {
+                const { symbol } = existingSymbols[i];
+                const targetRow = writeRow - i;
+                
+                if (targetRow >= 0) {
+                    this.grid[col][targetRow] = symbol;
+                    symbol.setGridPosition(col, targetRow);
                     
-                    symbol.setGridPosition(col, emptyRow);
-                    const newPos = this.getSymbolPosition(col, emptyRow);
-                    symbol.updatePosition(newPos.x, symbol.y);
+                    const targetPos = this.getSymbolPosition(col, targetRow);
                     
-                    // Use Symbol's fall method
-                    const promise = symbol.fall(newPos.y);
-                    promises.push(promise);
-                    emptyRow--;
+                    // Only animate if the symbol is moving down
+                    if (symbol.y < targetPos.y) {
+                        const promise = new Promise(resolve => {
+                            this.scene.tweens.add({
+                                targets: symbol,
+                                x: targetPos.x,
+                                y: targetPos.y,
+                                duration: window.GameConfig.CASCADE_SPEED,
+                                ease: 'Bounce.out',
+                                onComplete: resolve
+                            });
+                        });
+                        promises.push(promise);
+                    } else {
+                        // Symbol is already in correct position
+                        symbol.setPosition(targetPos.x, targetPos.y);
+                    }
                 }
             }
         }
@@ -240,33 +267,73 @@ window.GridManager = class GridManager {
         this.isCascading = false;
         this.cascadeCount++;
         
+        // Start idle animations for all symbols after cascading is complete
+        this.startAllIdleAnimations();
+        
         return true;
+    }
+    
+    startAllIdleAnimations() {
+        // Start idle animations for all symbols on the grid
+        for (let col = 0; col < this.cols; col++) {
+            for (let row = 0; row < this.rows; row++) {
+                const symbol = this.grid[col][row];
+                if (symbol && symbol.startIdleAnimation) {
+                    // Add a small delay to stagger the idle animations
+                    this.scene.time.delayedCall((col + row) * 100, () => {
+                        symbol.startIdleAnimation();
+                    });
+                }
+            }
+        }
+    }
+    
+    stopAllIdleAnimations() {
+        // Stop idle animations for all symbols on the grid
+        for (let col = 0; col < this.cols; col++) {
+            for (let row = 0; row < this.rows; row++) {
+                const symbol = this.grid[col][row];
+                if (symbol && symbol.stopIdleAnimation) {
+                    symbol.stopIdleAnimation();
+                }
+            }
+        }
     }
     
     async fillEmptySpaces() {
         const promises = [];
         
-        for (let col = 0; col < this.cols; col++) {
-            for (let row = 0; row < this.rows; row++) {
+        // Fill from top to bottom to ensure proper cascading
+        for (let row = 0; row < this.rows; row++) {
+            for (let col = 0; col < this.cols; col++) {
                 if (!this.grid[col][row]) {
                     const randomType = this.getRandomSymbolType();
                     const symbol = this.createSymbol(randomType, col, row);
                     
-                    // Start above the grid
-                    const startY = this.gridY - this.symbolSize * 2;
-                    symbol.setPosition(symbol.x, startY);
+                    // Calculate how many empty rows are above this position
+                    let emptyRowsAbove = 0;
+                    for (let checkRow = row - 1; checkRow >= 0; checkRow--) {
+                        if (!this.grid[col][checkRow]) {
+                            emptyRowsAbove++;
+                        } else {
+                            break;
+                        }
+                    }
                     
-                    this.grid[col][row] = symbol;
-                    
+                    // Start above the grid, accounting for empty rows
+                    const startY = this.gridY - this.symbolSize * (2 + emptyRowsAbove);
                     const targetPos = this.getSymbolPosition(col, row);
+                    
+                    symbol.setPosition(targetPos.x, startY);
+                    this.grid[col][row] = symbol;
                     
                     const promise = new Promise(resolve => {
                         this.scene.tweens.add({
                             targets: symbol,
                             y: targetPos.y,
-                            duration: GameConfig.CASCADE_SPEED,
+                            duration: window.GameConfig.CASCADE_SPEED + (emptyRowsAbove * 100),
                             ease: 'Bounce.out',
-                            delay: row * 50, // Stagger the drops
+                            delay: col * 50, // Stagger by column instead of row
                             onComplete: resolve
                         });
                     });
@@ -308,14 +375,20 @@ window.GridManager = class GridManager {
     
     countScatters() {
         let count = 0;
+        const scatterPositions = [];
         
         for (let col = 0; col < this.cols; col++) {
             for (let row = 0; row < this.rows; row++) {
                 const symbol = this.grid[col][row];
                 if (symbol && symbol.symbolType === 'infinity_glove') {
                     count++;
+                    scatterPositions.push(`(${col},${row})`);
                 }
             }
+        }
+        
+        if (count > 0) {
+            console.log(`Found ${count} scatter symbols at positions: ${scatterPositions.join(', ')}`);
         }
         
         return count;
@@ -345,7 +418,7 @@ window.GridManager = class GridManager {
             // Apply multiplier to the symbol
             symbol.multiplier = multiplier;
             
-            // Visual effect - make the symbol glow and pulse
+            // Visual effect - make the symbol glow and pulse initially
             this.scene.tweens.add({
                 targets: symbol,
                 scaleX: 1.4,
@@ -356,8 +429,8 @@ window.GridManager = class GridManager {
                 ease: 'Power2'
             });
             
-            // Add glowing effect
-            symbol.setTint(0xFFD700); // Golden glow
+            // Add persistent glowing effect
+            symbol.setTint(0xFFD700); // Golden glow - stays until symbol is destroyed
             
             // Add multiplier text above the symbol
             const multText = this.scene.add.text(
@@ -375,25 +448,27 @@ window.GridManager = class GridManager {
             multText.setOrigin(0.5);
             multText.setScale(0);
             
-            // Animate multiplier text
+            // Store reference to multiplier text on the symbol so it persists
+            symbol.multiplierText = multText;
+            
+            // Animate multiplier text appearance
             this.scene.tweens.add({
                 targets: multText,
                 scaleX: 1,
                 scaleY: 1,
                 duration: 300,
-                ease: 'Back.out',
-                onComplete: () => {
-                    // Keep the multiplier text visible during the spin
-                    this.scene.time.delayedCall(2000, () => {
-                        this.scene.tweens.add({
-                            targets: multText,
-                            alpha: 0,
-                            y: multText.y - 20,
-                            duration: 500,
-                            onComplete: () => multText.destroy()
-                        });
-                    });
-                }
+                ease: 'Back.out'
+                // Removed the auto-destroy - text will stay until symbol is destroyed
+            });
+            
+            // Add subtle pulsing effect to keep it visually active
+            this.scene.tweens.add({
+                targets: [symbol, multText],
+                alpha: 0.8,
+                duration: 800,
+                yoyo: true,
+                repeat: -1, // Infinite repeat
+                ease: 'Sine.easeInOut'
             });
             
             console.log(`Infinity Power applied: Symbol at (${col},${row}) now has x${multiplier} multiplier`);
