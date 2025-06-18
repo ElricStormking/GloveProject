@@ -74,14 +74,31 @@ window.LoadingScene = class LoadingScene extends Phaser.Scene {
         });
         
         this.load.on('complete', () => {
+            console.log('All assets loaded successfully!');
             progressBar.destroy();
             progressBox.destroy();
             loadingText.destroy();
             assetText.destroy();
         });
         
+        this.load.on('loaderror', (file) => {
+            console.error('Failed to load:', file.key, file.src);
+            assetText.setText('Error loading: ' + file.key);
+        });
+        
         // Load game assets - actual gem images and placeholder textures
         this.loadGameAssets();
+        
+        // Add a timeout to force loading to complete if it hangs
+        this.time.delayedCall(10000, () => {
+            if (!this.load.isLoading()) return; // Already finished
+            console.warn('Loading timeout - forcing completion');
+            assetText.setText('Loading timeout - continuing...');
+            this.load.removeAllListeners();
+            this.time.delayedCall(1000, () => {
+                this.scene.start('MenuScene');
+            });
+        });
     }
     
     loadGameAssets() {
@@ -105,7 +122,16 @@ window.LoadingScene = class LoadingScene extends Phaser.Scene {
         
         // Generate placeholder textures for non-gem symbols
         Object.keys(placeholderColors).forEach(key => {
-            this.load.image(key, this.generateColoredTexture(placeholderColors[key], key));
+            console.log(`Generating placeholder texture for: ${key}`);
+            try {
+                const texture = this.generateColoredTexture(placeholderColors[key], key);
+                this.load.image(key, texture);
+                console.log(`Successfully generated texture for: ${key}`);
+            } catch (error) {
+                console.error(`Failed to generate texture for ${key}:`, error);
+                // Create a simple fallback
+                this.load.image(key, 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==');
+            }
         });
         
         // Skip audio loading for now - we'll handle this in the sound system
@@ -216,8 +242,10 @@ window.LoadingScene = class LoadingScene extends Phaser.Scene {
 
     
     create() {
+        console.log('LoadingScene create() called - transitioning to MenuScene');
         // Add a short delay before transitioning
         this.time.delayedCall(500, () => {
+            console.log('Starting MenuScene...');
             this.scene.start('MenuScene');
         });
     }
